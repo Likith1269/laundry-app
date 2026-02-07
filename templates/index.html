@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Laundry App</title>
+</head>
+<body>
+
+<h1>Laundry Order Form</h1>
+
+<form action="/add" method="POST">
+    Name:<br>
+    <input type="text" name="name" required><br><br>
+
+    Phone:<br>
+    <input type="text" name="phone" required><br><br>
+
+    Number of Clothes:<br>
+    <input type="number" name="clothes" required><br><br>
+
+    Service:<br>
+    <select name="service">
+        <option>Wash</option>
+        <option>Dry Clean</option>
+        <option>Iron</option>
+    </select><br><br>
+
+    <button type="submit">Place Order</button>
+</form>
+<br><br>
+<a href="/orders">View All Orders</a>
+
+
+</body>
+</html>

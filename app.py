@@ -1,0 +1,144 @@
+from flask import Flask, render_template, request, redirect, session
+import sqlite3
+
+app = Flask(__name__)
+app.secret_key = "laundry_secret"
+
+
+# ------------------------
+# Database Initialization
+# ------------------------
+def init_db():
+    conn = sqlite3.connect('laundry.db')
+    c = conn.cursor()
+
+    # Create table if not exists
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            phone TEXT,
+            clothes INTEGER,
+            service TEXT,
+            status TEXT
+        )
+    ''')
+
+    # Add status column if old database doesn't have it
+    try:
+        c.execute("ALTER TABLE orders ADD COLUMN status TEXT")
+    except:
+        pass
+
+    conn.commit()
+    conn.close()
+
+init_db()
+
+
+# ------------------------
+# Customer Page
+# ------------------------
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+
+@app.route('/add', methods=['POST'])
+def add_order():
+    name = request.form['name']
+    phone = request.form['phone']
+    clothes = request.form['clothes']
+    service = request.form['service']
+
+    conn = sqlite3.connect('laundry.db')
+    c = conn.cursor()
+
+    # Insert with default status
+    c.execute(
+        "INSERT INTO orders (name, phone, clothes, service, status) VALUES (?, ?, ?, ?, ?)",
+        (name, phone, clothes, service, "Pending")
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect('/')
+
+
+# ------------------------
+# Admin Login
+# ------------------------
+@app.route('/admin')
+def admin():
+    return render_template('login.html')
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.form['username']
+    password = request.form['password']
+
+    if username == "admin" and password == "1234":
+        session['admin'] = True
+        return redirect('/orders')
+    else:
+        return "Invalid Login"
+
+
+@app.route('/logout')
+def logout():
+    session.pop('admin', None)
+    return redirect('/admin')
+
+
+# ------------------------
+# Admin Orders (Protected)
+# ------------------------
+@app.route('/orders')
+def view_orders():
+    if not session.get('admin'):
+        return redirect('/admin')
+
+    conn = sqlite3.connect('laundry.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM orders")
+    data = c.fetchall()
+    conn.close()
+
+    return render_template('orders.html', orders=data)
+
+
+@app.route('/complete/<int:id>')
+def complete_order(id):
+    if not session.get('admin'):
+        return redirect('/admin')
+
+    conn = sqlite3.connect('laundry.db')
+    c = conn.cursor()
+    c.execute("UPDATE orders SET status='Completed' WHERE id=?", (id,))
+    conn.commit()
+    conn.close()
+
+    return redirect('/orders')
+
+
+@app.route('/delete/<int:id>')
+def delete_order(id):
+    if not session.get('admin'):
+        return redirect('/admin')
+
+    conn = sqlite3.connect('laundry.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM orders WHERE id=?", (id,))
+    conn.commit()
+    conn.close()
+
+    return redirect('/orders')
+
+
+# ------------------------
+# Run Server
+# ------------------------
+if __name__ == '__main__':
+    app.run(debug=True)
