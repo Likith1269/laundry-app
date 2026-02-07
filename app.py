@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
 
-print("App started")
-
 app = Flask(__name__)
 app.secret_key = "laundry_secret"
+
+print("App started")
 
 
 # ------------------------
@@ -14,7 +14,6 @@ def init_db():
     conn = sqlite3.connect('laundry.db')
     c = conn.cursor()
 
-    # Create table if not exists
     c.execute('''
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,13 +27,12 @@ def init_db():
         )
     ''')
 
-    # Add latitude column if missing
+    # Add columns if missing (safe for existing DB)
     try:
         c.execute("ALTER TABLE orders ADD COLUMN latitude TEXT")
     except:
         pass
 
-    # Add longitude column if missing
     try:
         c.execute("ALTER TABLE orders ADD COLUMN longitude TEXT")
     except:
@@ -48,14 +46,13 @@ init_db()
 
 
 # ------------------------
-# Customer Home Page
+# Customer Pages
 # ------------------------
 @app.route('/')
 def home():
     return render_template('index.html')
 
 
-# Add Order
 @app.route('/add', methods=['POST'])
 def add_order():
     name = request.form['name']
@@ -80,6 +77,27 @@ def add_order():
 
 
 # ------------------------
+# Customer Order Tracking
+# ------------------------
+@app.route('/track')
+def track_page():
+    return render_template('track.html')
+
+
+@app.route('/track_order', methods=['POST'])
+def track_order():
+    phone = request.form['phone']
+
+    conn = sqlite3.connect('laundry.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM orders WHERE phone=? ORDER BY id DESC", (phone,))
+    orders = c.fetchall()
+    conn.close()
+
+    return render_template('track.html', orders=orders)
+
+
+# ------------------------
 # Admin Login
 # ------------------------
 @app.route('/admin')
@@ -94,7 +112,7 @@ def login():
 
     if username == "admin" and password == "1234":
         session['admin'] = True
-        return redirect('/orders')
+        return redirect('/dashboard')
     else:
         return "Invalid Login"
 
@@ -106,7 +124,35 @@ def logout():
 
 
 # ------------------------
-# Admin Orders (Protected)
+# Admin Dashboard
+# ------------------------
+@app.route('/dashboard')
+def dashboard():
+    if not session.get('admin'):
+        return redirect('/admin')
+
+    conn = sqlite3.connect('laundry.db')
+    c = conn.cursor()
+
+    c.execute("SELECT COUNT(*) FROM orders")
+    total = c.fetchone()[0]
+
+    c.execute("SELECT COUNT(*) FROM orders WHERE status='Pending'")
+    pending = c.fetchone()[0]
+
+    c.execute("SELECT COUNT(*) FROM orders WHERE status='Completed'")
+    completed = c.fetchone()[0]
+
+    conn.close()
+
+    return render_template('dashboard.html',
+                           total=total,
+                           pending=pending,
+                           completed=completed)
+
+
+# ------------------------
+# Admin Orders Management
 # ------------------------
 @app.route('/orders')
 def view_orders():
@@ -148,27 +194,6 @@ def delete_order(id):
     conn.close()
 
     return redirect('/orders')
-
-
-# ------------------------
-# Customer Order Tracking
-# ------------------------
-@app.route('/track')
-def track_page():
-    return render_template('track.html')
-
-
-@app.route('/track_order', methods=['POST'])
-def track_order():
-    phone = request.form['phone']
-
-    conn = sqlite3.connect('laundry.db')
-    c = conn.cursor()
-    c.execute("SELECT * FROM orders WHERE phone=? ORDER BY id DESC", (phone,))
-    orders = c.fetchall()
-    conn.close()
-
-    return render_template('track.html', orders=orders)
 
 
 # ------------------------
