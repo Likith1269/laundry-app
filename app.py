@@ -48,13 +48,14 @@ init_db()
 
 
 # ------------------------
-# Customer Page
+# Customer Home Page
 # ------------------------
 @app.route('/')
 def home():
     return render_template('index.html')
 
 
+# Add Order
 @app.route('/add', methods=['POST'])
 def add_order():
     name = request.form['name']
@@ -114,7 +115,7 @@ def view_orders():
 
     conn = sqlite3.connect('laundry.db')
     c = conn.cursor()
-    c.execute("SELECT * FROM orders")
+    c.execute("SELECT * FROM orders ORDER BY id DESC")
     data = c.fetchall()
     conn.close()
 
@@ -147,6 +148,27 @@ def delete_order(id):
     conn.close()
 
     return redirect('/orders')
+
+
+# ------------------------
+# Customer Order Tracking
+# ------------------------
+@app.route('/track')
+def track_page():
+    return render_template('track.html')
+
+
+@app.route('/track_order', methods=['POST'])
+def track_order():
+    phone = request.form['phone']
+
+    conn = sqlite3.connect('laundry.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM orders WHERE phone=? ORDER BY id DESC", (phone,))
+    orders = c.fetchall()
+    conn.close()
+
+    return render_template('track.html', orders=orders)
 
 
 # ------------------------
