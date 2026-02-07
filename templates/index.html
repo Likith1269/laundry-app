@@ -42,8 +42,15 @@
                         <option>Iron</option>
                     </select>
                 </div>
+                <button type="button" class="btn btn-secondary w-100 mb-3" onclick="getLocation()">
+    Share My Location
+</button>
+
 
                 <button class="btn btn-primary w-100">Place Order</button>
+                <input type="hidden" name="latitude" id="latitude">
+<input type="hidden" name="longitude" id="longitude">
+
 
             </form>
 
@@ -52,4 +59,23 @@
 </div>
 
 </body>
+<script>
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                document.getElementById("latitude").value = position.coords.latitude;
+                document.getElementById("longitude").value = position.coords.longitude;
+                alert("Location captured successfully!");
+            },
+            function(error) {
+                alert("Unable to get location. Please allow location access.");
+            }
+        );
+    } else {
+        alert("Geolocation is not supported by this browser.");
+    }
+}
+</script>
+
 </html>

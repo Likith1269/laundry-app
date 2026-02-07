@@ -28,6 +28,7 @@
                         <th>Clothes</th>
                         <th>Service</th>
                         <th>Status</th>
+                        <th>Location</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -40,17 +41,29 @@
                         <td>{{ order[2] }}</td>
                         <td>{{ order[3] }}</td>
                         <td>{{ order[4] }}</td>
-                        <td>
-                            {% if order[5] == 'Completed' %}
-                                <span class="badge bg-success">Completed</span>
-                            {% else %}
-                                <span class="badge bg-warning text-dark">Pending</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="/complete/{{ order[0] }}" class="btn btn-sm btn-success">Complete</a>
-                            <a href="/delete/{{ order[0] }}" class="btn btn-sm btn-danger">Delete</a>
-                        </td>
+<td>
+    {% if order[5] == 'Completed' %}
+        <span class="badge bg-success">Completed</span>
+    {% else %}
+        <span class="badge bg-warning text-dark">Pending</span>
+    {% endif %}
+</td>
+
+<td>
+{% if order[6] and order[7] %}
+    <a href="https://www.google.com/maps?q={{ order[6] }},{{ order[7] }}" target="_blank" class="btn btn-sm btn-info">
+        View Map
+    </a>
+{% else %}
+    Not shared
+{% endif %}
+</td>
+
+<td>
+    <a href="/complete/{{ order[0] }}" class="btn btn-sm btn-success">Complete</a>
+    <a href="/delete/{{ order[0] }}" class="btn btn-sm btn-danger">Delete</a>
+</td>
+
                     </tr>
                 {% endfor %}
                 </tbody>

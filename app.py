@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
 
+print("App started")
+
 app = Flask(__name__)
 app.secret_key = "laundry_secret"
 
@@ -20,18 +22,27 @@ def init_db():
             phone TEXT,
             clothes INTEGER,
             service TEXT,
-            status TEXT
+            status TEXT,
+            latitude TEXT,
+            longitude TEXT
         )
     ''')
 
-    # Add status column if old database doesn't have it
+    # Add latitude column if missing
     try:
-        c.execute("ALTER TABLE orders ADD COLUMN status TEXT")
+        c.execute("ALTER TABLE orders ADD COLUMN latitude TEXT")
+    except:
+        pass
+
+    # Add longitude column if missing
+    try:
+        c.execute("ALTER TABLE orders ADD COLUMN longitude TEXT")
     except:
         pass
 
     conn.commit()
     conn.close()
+
 
 init_db()
 
@@ -50,14 +61,15 @@ def add_order():
     phone = request.form['phone']
     clothes = request.form['clothes']
     service = request.form['service']
+    latitude = request.form.get('latitude')
+    longitude = request.form.get('longitude')
 
     conn = sqlite3.connect('laundry.db')
     c = conn.cursor()
 
-    # Insert with default status
     c.execute(
-        "INSERT INTO orders (name, phone, clothes, service, status) VALUES (?, ?, ?, ?, ?)",
-        (name, phone, clothes, service, "Pending")
+        "INSERT INTO orders (name, phone, clothes, service, status, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (name, phone, clothes, service, "Pending", latitude, longitude)
     )
 
     conn.commit()
@@ -141,4 +153,5 @@ def delete_order(id):
 # Run Server
 # ------------------------
 if __name__ == '__main__':
+    print("Starting Flask server...")
     app.run(debug=True)
